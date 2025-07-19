@@ -1,2 +1,8 @@
+# Python
+*.pyc
+
 # Vim
 *.swp
+
+# Local
+.env
