@@ -1,10 +1,9 @@
-"""Functions for reading files.
-"""
+"""Functions for reading files."""
 
 import csv
 
 def read_csv(filepath, delimiter=","):
-    """Returns a list of where each element is a row from a CSV file.
+    """Returns a list where each element is a row from a CSV file.
 
     >>> data = read_csv("books_sorted_by_author.csv")
     >>> print(data)
