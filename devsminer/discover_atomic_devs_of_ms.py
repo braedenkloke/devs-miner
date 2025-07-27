@@ -74,7 +74,67 @@ def execute(event_log, state_log):
         if log[i][L_state_i][SL_state_i] == passive_state:
             log[i][L_duration_i] = inf
 
-    return log
+    # Identify system resources
+    resources = set()
+    for e in log:
+        resources.add(e[L_state_i][SL_resource_i])
+
+    # Extract inputs
+    inputs = set()
+    for i in range(1, len(log)):     
+        event = log[i][L_event_i]
+        current_state = log[i][L_state_i][SL_state_i]
+        prev_state = log[i - 1][L_state_i][SL_state_i]
+        if event[EL_resource_i] not in resources and current_state != prev_state:
+            inputs.add(event[EL_activity_i])
+
+    # Extract outputs
+    outputs = set()
+    for e in log:     
+        event = e[L_event_i]
+        if event != None and event[EL_resource_i] in resources:
+            outputs.add(event[EL_activity_i])
+
+    # Extract states
+    states = set()
+    for e in log:
+        states.add(e[L_state_i][SL_state_i])
+
+    # Extract external transition function
+    ext_trans = set()
+    for i in range(1, len(log)):
+        event_activity = log[i][L_event_i][EL_activity_i]
+        current_state = log[i][L_state_i][SL_state_i]
+        prev_state = log[i - 1][L_state_i][SL_state_i]
+        if event_activity in inputs:
+            ext_trans.add( ((prev_state, event_activity), current_state,) )
+
+    # Extract internal transition function
+    int_trans = set()
+    for i in range(1, len(log)):
+        event = log[i][L_event_i]
+        current_state = log[i][L_state_i][SL_state_i]
+        prev_state = log[i - 1][L_state_i][SL_state_i]
+        if current_state != prev_state:
+            if event == None or event[EL_activity_i] not in inputs:
+                int_trans.add( (prev_state, current_state,) )
+
+    # Extract output function
+    output_func = set()
+    for i in range(len(log)):
+        event = log[i][L_event_i]
+        prev_state = log[i - 1][L_state_i][SL_state_i]
+        if event != None and event[EL_activity_i] in outputs:
+            output_func.add( (prev_state, event[EL_activity_i],) )
+
+    # Extract time advance function
+    ta = set()
+    for e in log:
+        state = e[L_state_i][SL_state_i]
+        duration = e[L_duration_i]
+        ta.add( (state, duration,) )
+        
+    return inputs, outputs, states, ta, ext_trans, int_trans, output_func
 
 def _join_logs_on_timestamp(log1, log2, log1_t_index=0, log2_t_index=0):
     # Assumptions:
