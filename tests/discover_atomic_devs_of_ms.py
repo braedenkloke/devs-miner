@@ -1,6 +1,6 @@
 import unittest
 
-from devsminer import discover_atomic_devs_of_ms, read_file
+from devsminer import discover_atomic_devs_of_ms, io
 from math import inf
 
 class DiscoverAtomicDevsOfMSTest(unittest.TestCase):

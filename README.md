@@ -4,11 +4,11 @@ Process mining discovery algorithms for [DEVS](https://en.wikipedia.org/wiki/DEV
 # Usage
 Here is a simple example for how to use this library
 ```
-from devs_miner import read_file, discover_atomic_devs_of_ms
+from devs_miner import io, discover_atomic_devs_of_ms
 
 if __name__ == "__main__":
-    event_log = read_file.read_csv('<path-to-csv-event-log-file.csv>')
-    state_log = read_file.read_csv('<path-to-csv-state-log-file.csv>')
+    event_log = io.read_csv('<path-to-csv-event-log-file.csv>')
+    state_log = io.read_csv('<path-to-csv-state-log-file.csv>')
     X, Y, S, ta, ext_trans, int_trans, output = discover_atomic_devs_of_ms.execute(event_log, state_log)
 ```
 

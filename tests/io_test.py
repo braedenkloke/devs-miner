@@ -1,11 +1,11 @@
 import unittest
 
-from devsminer import read_file
+from devsminer import io
 
-class ReadFileTest(unittest.TestCase):
+class IOTest(unittest.TestCase):
 
     def test_read_csv(self):
-        books = read_file.read_csv("tests/input_data/books_sorted_by_author.csv")
+        books = io.read_csv("tests/input_data/books_sorted_by_author.csv")
 
         self.assertEqual(3, len(books))
         self.assertEqual("The Little Mermaid", books[0][0])
