@@ -1,4 +1,3 @@
-"""Process mining discovery algorithm for an atomic DEVS model of a manufacturing system."""
 
 from math import inf
 
@@ -22,13 +21,21 @@ def execute(event_log, state_log):
         S           set of states
         ta          time advance function represented as a set of pairs mapping 
                     ta(s) -> real number
-        ext_trans   external transition function represented as a set of pairs
+        ext_trans   external transition function represented as a set of ordered pairs.
                     mapping ext_trans(s,e,x) -> s
-        int_trans   internal transition function represented as a set of pairs
+        int_trans   internal transition function represented as a set of ordered pairs.
                     mapping int_trans(s) -> s
-        output      output function represented as a set of tuples mapping
+        output      output function represented as a set of ordered pairs mapping
                     output(s) -> y
 
+    >>> execute(event_log, state_log)
+    X: {'enter'}
+    Y: {'end'}
+    S: {'idle', 'busy'}
+    ta: {('busy', 5.0), ('idle', inf)}
+    ext_trans: {(('idle', 'enter'), 'busy')}
+    int_trans: {('busy', 'idle')}
+    output: {('busy', 'end')}
     """
     # Log indices
     EL_timestamp_i = 0
@@ -136,36 +143,40 @@ def execute(event_log, state_log):
         
     return inputs, outputs, states, ta, ext_trans, int_trans, output_func
 
-def _join_logs_on_timestamp(log1, log2, log1_t_index=0, log2_t_index=0):
+def _join_logs_on_timestamp(event_log, state_log, event_log_timestamp_i=0, state_log_timestamp_i=0):
     # Assumptions:
     # * logs are not empty
     # * logs are sorted by timestamp in ascending order
-    # * timestamps within a log are unique, i.e., no concurrent events in a given log
+    # * no concurrency, i.e., events that happen at the same time happen in the given order
     joined_log = []
-    log1_i = 0
-    log2_i = 0
+    event_log_i = 0
+    state_log_i = 0
+    
+    # Add initial state to log
+    joined_log.append( [ state_log[state_log_i][state_log_timestamp_i], None, state_log[state_log_i] ] )
+    state_log_i += 1
 
-    while log1_i < len(log1) or log2_i < len(log2):
-        # Case: joined all log entries from log1
-        if log1_i >= len(log1):
-            joined_log.append( [ log2[log2_i][log2_t_index], None, log2[log2_i] ] )
-            log2_i += 1
-        # Case: joined all log entries from log2
-        elif log2_i >= len(log2):
-            joined_log.append( [ log1[log1_i][log1_t_index], log1[log1_i], None ] )
-            log1_i += 1
+    while event_log_i < len(event_log) or state_log_i < len(state_log):
+        # Case: joined all log entries from event_log
+        if event_log_i >= len(event_log):
+            joined_log.append( [ state_log[state_log_i][state_log_timestamp_i], None, state_log[state_log_i] ] )
+            state_log_i += 1
+        # Case: joined all log entries from state_log
+        elif state_log_i >= len(state_log):
+            joined_log.append( [ event_log[event_log_i][event_log_timestamp_i], event_log[event_log_i], None ] )
+            event_log_i += 1
         # Case: timestamps match
-        elif log1[log1_i][log1_t_index] == log2[log2_i][log2_t_index]:
-            joined_log.append( [ log1[log1_i][log1_t_index], log1[log1_i], log2[log2_i] ] )
-            log1_i += 1
-            log2_i += 1
-        # Case: log1 timestamp is less than log2 timestamp
-        elif log1[log1_i][log1_t_index] < log2[log2_i][log2_t_index]:
-            joined_log.append( [ log1[log1_i][log1_t_index], log1[log1_i], None ] )
-            log1_i += 1
-        # Case: log1 timestamp is greater than log2 timestamp
+        elif event_log[event_log_i][event_log_timestamp_i] == state_log[state_log_i][state_log_timestamp_i]:
+            joined_log.append( [ event_log[event_log_i][event_log_timestamp_i], event_log[event_log_i], state_log[state_log_i] ] )
+            event_log_i += 1
+            state_log_i += 1
+        # Case: event_log timestamp is less than state_log timestamp
+        elif event_log[event_log_i][event_log_timestamp_i] < state_log[state_log_i][state_log_timestamp_i]:
+            joined_log.append( [ event_log[event_log_i][event_log_timestamp_i], event_log[event_log_i], None ] )
+            event_log_i += 1
+        # Case: event_log timestamp is greater than state_log timestamp
         else:
-            joined_log.append( [ log2[log2_i][log2_t_index], None, log2[log2_i] ] )
-            log2_i += 1
+            joined_log.append( [ state_log[state_log_i][state_log_timestamp_i], None, state_log[state_log_i] ] )
+            state_log_i += 1
 
     return joined_log
