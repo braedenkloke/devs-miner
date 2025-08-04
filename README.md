@@ -2,18 +2,12 @@
 Process mining discovery algorithms for [DEVS](https://en.wikipedia.org/wiki/DEVS) models.
 
 # Usage
-Here is a simple example for how to use this library
+With `$PYTHON_PATH` set to `$PWD`, run
 ```
-from devs_miner import io, discover_atomic_devs_of_ms
-
-if __name__ == "__main__":
-    event_log = io.read_csv('<path-to-csv-event-log-file.csv>')
-    state_log = io.read_csv('<path-to-csv-state-log-file.csv>')
-    X, Y, S, ta, ext_trans, int_trans, output = discover_atomic_devs_of_ms.execute(event_log, state_log)
+python3 examples/discover_atomic_devs_model_of_manufacturing_sys.py` 
 ```
 
-`examples/main.py` implements the above code for an event and state log of a manufacturing system.
-Running the example outputs
+Your output will be
 ```
 X: {'enter'}
 Y: {'end'}
