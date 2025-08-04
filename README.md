@@ -1,5 +1,5 @@
 # DEVS-miner
-Process mining discovery algorithms for [DEVS](https://en.wikipedia.org/wiki/DEVS) models.
+Process mining algorithms for [DEVS](https://en.wikipedia.org/wiki/DEVS) models.
 
 # Usage
 With `$PYTHON_PATH` set to `$PWD`, run
