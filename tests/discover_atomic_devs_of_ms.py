@@ -1,13 +1,25 @@
 import unittest
-
-from devsminer import discover_atomic_devs_of_ms, io
+import csv
 from math import inf
+
+from devsminer import discover_atomic_devs_of_ms
 
 class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
 
     def test_execute(self):
-        event_log = io.read_csv("tests/input_data/manufacturing_sys_event_log.csv")
-        state_log = io.read_csv("tests/input_data/manufacturing_sys_state_log.csv")
+        event_log = []
+        state_log = []
+    
+        with open('tests/input_data/manufacturing_sys_event_log.csv', newline='') as f:
+            reader = csv.reader(f, delimiter=',')
+            for row in reader:
+                event_log.append(row)
+
+        with open('tests/input_data/manufacturing_sys_state_log.csv', newline='') as f:
+            reader = csv.reader(f, delimiter=',')
+            for row in reader:
+                state_log.append(row)
+
         X, Y, S, ta, ext_trans, int_trans, output = discover_atomic_devs_of_ms.execute(event_log, state_log)
 
         # Check inputs, outputs and states
