@@ -6,15 +6,17 @@ from math import inf
 class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
 
     def test_execute(self):
-        event_log = read_file.read_csv("tests/input_data/event_log_1.csv")
-        state_log = read_file.read_csv("tests/input_data/state_log_1.csv")
+        event_log = io.read_csv("tests/input_data/manufacturing_sys_event_log.csv")
+        state_log = io.read_csv("tests/input_data/manufacturing_sys_state_log.csv")
         X, Y, S, ta, ext_trans, int_trans, output = discover_atomic_devs_of_ms.execute(event_log, state_log)
 
+        # Check inputs, outputs and states
         self.assertTrue("enter" in X)
         self.assertTrue("end" in Y)
         self.assertTrue("idle" in S)
         self.assertTrue("busy" in S)
 
+        # Check time advance function
         self.assertEqual(2, len(ta))
         counter = 0
         for m in ta:
@@ -26,6 +28,7 @@ class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
                 counter += 1
         self.assertEqual(len(ta), counter) # checked all mappings
 
+        # Check external transition function
         self.assertEqual(1, len(ext_trans))
         counter = 0
         for m in ext_trans:
@@ -35,6 +38,7 @@ class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
                 counter += 1
         self.assertEqual(len(ext_trans), counter) # checked all mappings
 
+        # Check internal transition function
         self.assertEqual(1, len(int_trans))
         counter = 0
         for m in int_trans:
@@ -43,6 +47,7 @@ class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
                 counter += 1
         self.assertEqual(len(int_trans), counter) # checked all mappings
 
+        # Checkout output function
         self.assertEqual(1, len(output))
         counter = 0
         for m in output:
