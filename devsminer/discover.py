@@ -1,7 +1,6 @@
+import math
 
-from math import inf
-
-def execute(event_log, state_log):
+def discover_atomic_devs_of_manufacturing_system(event_log, state_log):
     """Returns an atomic DEVS model from a given event log and state log for a manufacturing system.
 
     Event log:
@@ -37,6 +36,9 @@ def execute(event_log, state_log):
     int_trans: {('busy', 'idle')}
     output: {('busy', 'end')}
     """
+    
+    """
+    (deprecated)
     # Log indices
     EL_timestamp_i = 0
     EL_order_id_i = 1
@@ -49,26 +51,11 @@ def execute(event_log, state_log):
     L_event_i = 1
     L_state_i = 2
     L_duration_i = 3
-
-    # Clean data
-    for e in event_log:
-        e[EL_timestamp_i] = float(e[EL_timestamp_i])
-    for e in state_log:
-        e[SL_timestamp_i] = float(e[SL_timestamp_i])
-
-    # Check assumption that logs are sorted by timestamp in ascending order
-    prev_timestamp = 0
-    for e in event_log:
-        assert e[EL_timestamp_i] >= prev_timestamp, "Event log should be sorted by timestamp in ascending order."
-        prev_timestamp = e[EL_timestamp_i]
-
-    prev_timestamp = 0
-    for e in state_log:
-        assert e[SL_timestamp_i] >= prev_timestamp, "State log should be sorted by timestamp in ascending order."
-        prev_timestamp = e[SL_timestamp_i]
+    """
 
     log = _join_logs_on_timestamp(event_log, state_log)
 
+    """
     # Estimate durations
     n = len(log)
     for i in range(n - 1):
@@ -142,6 +129,7 @@ def execute(event_log, state_log):
         ta.add( (state, duration,) )
         
     return inputs, outputs, states, ta, ext_trans, int_trans, output_func
+    """
 
 def _join_logs_on_timestamp(event_log, state_log, event_log_timestamp_i=0, state_log_timestamp_i=0):
     # Assumptions:

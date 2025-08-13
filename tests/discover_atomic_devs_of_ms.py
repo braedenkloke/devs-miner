@@ -1,12 +1,12 @@
 import unittest
 import csv
-from math import inf
+import math
 
-from devsminer import discover_atomic_devs_of_ms
+import devsminer.discover as dm
 
-class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
+class DiscoverTest(unittest.TestCase):
 
-    def test_execute(self):
+    def test_discover_atomic_devs_of_manufacturing_system(self):
         event_log = []
         state_log = []
     
@@ -20,7 +20,7 @@ class DiscoverAtomicDevsOfMSTest(unittest.TestCase):
             for row in reader:
                 state_log.append(row)
 
-        X, Y, S, ta, ext_trans, int_trans, output = discover_atomic_devs_of_ms.execute(event_log, state_log)
+        X, Y, S, ta, ext_trans, int_trans, output = dm.discover_atomic_devs_of_manufacturing_system(event_log, state_log)
 
         # Check inputs, outputs and states
         self.assertTrue("enter" in X)

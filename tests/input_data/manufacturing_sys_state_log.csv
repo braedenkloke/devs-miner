@@ -1,3 +1,4 @@
+timestamp,resource,state
 0,cell,idle
 0,cell,busy
 5,cell,idle

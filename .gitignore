@@ -1,8 +1,9 @@
 # Python
 *.pyc
+bin
+lib
+share
+pyvenv.cfg
 
 # Vim
 *.swp
-
-# Local
-.env
