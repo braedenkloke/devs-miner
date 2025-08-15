@@ -43,75 +43,44 @@ def discover_atomic_devs_of_manufacturing_system(
     # Estimate durations
     for i in range(len(log) - 1):
         log.at[i, duration_key] = log.at[i + 1, timestamp_key] - log.at[i, timestamp_key] 
-    log.at[len(log) - 1, duration_key] = math.inf
-
-    # Estimate passive states
-    s = log.at[len(log) - 1, state_log_entry_key]
-    passive_state = s[state_key]
+    passive_state = log.at[len(log) - 1, state_log_entry_key][state_key]
     for i in range(len(log)):
-        s = log.at[i, state_log_entry_key]
-        if s[state_key] == passive_state:
+        if log.at[i, state_log_entry_key][state_key] == passive_state:
             log.at[i, duration_key] = math.inf
-
-    # Identify system resources
+    
+    # Extract inputs, outputs and states
+    inputs = set()
+    outputs = set()
+    states = set()
     resources = set()
     for i in range(len(state_log)):
+        states.add(log.at[i, state_log_entry_key][state_key])
         resources.add(state_log.at[i, resource_key])
-
-    # Extract inputs
-    inputs = set()
     for i in range(1, len(log)):     
         event = log.at[i, event_log_entry_key]
         current_state = log.at[i, state_log_entry_key][state_key]
         prev_state = log.at[i - 1, state_log_entry_key][state_key]
         if event[resource_key] not in resources and current_state != prev_state:
             inputs.add(event[activity_key])
-
-    # Extract outputs
-    outputs = set()
-    for i in range(len(log)):     
-        event = log.at[i, event_log_entry_key]
         if event[resource_key] in resources:
             outputs.add(event[activity_key])
-
-    # Extract states
-    states = set()
-    for i in range(len(log)):
-        states.add(log.at[i, state_log_entry_key][state_key])
-
-    # Extract external transition function
+    
+    # Extract external transition, internal transition, output and time advance functions
     ext_trans = set()
+    int_trans = set()
+    output_func = set()
+    ta = set()
     for i in range(1, len(log)):
         event_activity = log.at[i, event_log_entry_key][activity_key]
         current_state = log.at[i, state_log_entry_key][state_key]
         prev_state = log.at[i - 1, state_log_entry_key][state_key]
         if event_activity in inputs:
-            ext_trans.add( ((prev_state, event_activity), current_state,) )
-
-    # Extract internal transition function
-    int_trans = set()
-    for i in range(1, len(log)):
-        event = log.at[i, event_log_entry_key]
-        current_state = log.at[i, state_log_entry_key][state_key]
-        prev_state = log.at[i - 1, state_log_entry_key][state_key]
-        if current_state != prev_state:
-            if event[activity_key] not in inputs:
-                int_trans.add((prev_state, current_state,))
-
-    # Extract output function
-    output_func = set()
-    for i in range(1, len(log)):
-        event = log.at[i, event_log_entry_key]
-        prev_state = log.at[i - 1, state_log_entry_key][state_key]
-        if event[activity_key] in outputs:
-            output_func.add((prev_state, event[activity_key],))
-
-    # Extract time advance function
-    ta = set()
-    for i in range(len(log)):
-        state = log.at[i, state_log_entry_key][state_key]
-        duration = log.at[i, duration_key]
-        ta.add((state, float(duration),))
+            ext_trans.add(((prev_state, event_activity), current_state,))
+        if event_activity not in inputs and current_state != prev_state:
+            int_trans.add((prev_state, current_state,))
+        if event_activity in outputs:
+            output_func.add((prev_state, event_activity,))
+        ta.add((current_state, float(log.at[i, duration_key]),))
         
     return inputs, outputs, states, ta, ext_trans, int_trans, output_func
 
