@@ -15,8 +15,8 @@ def main():
     event_log = pd.read_csv('tests/input_data/manufacturing_sys_event_log.csv', sep=',', converters={"order_id":str}) 
     state_log = pd.read_csv('tests/input_data/manufacturing_sys_state_log.csv', sep=',') 
 
-    extract_petri_net(event_log)
-
+    #extract_petri_net(event_log)
+    
     X, Y, S, ta, ext_trans, int_trans, output = dm.discover_atomic_devs_of_manufacturing_system(event_log, state_log)
 
     print('X: ' + str(X))

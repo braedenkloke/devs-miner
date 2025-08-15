@@ -1,17 +1,28 @@
 import math
+import pandas as pd
 
-def discover_atomic_devs_of_manufacturing_system(event_log, state_log):
-    """Returns an atomic DEVS model from a given event log and state log for a manufacturing system.
+event_log_entry_key = 'event log entry'
+state_log_entry_key = 'state log entry'
+duration_key = 'duration'
 
-    Event log:
+def discover_atomic_devs_of_manufacturing_system(
+    event_log: pd.DataFrame, 
+    state_log: pd.DataFrame,
+    timestamp_key: str = 'timestamp',
+    state_key: str = 'state',
+    resource_key: str = 'resource',
+    activity_key: str = 'event'
+) -> tuple:
+    """
+    Discovers an atomic DEVS model of a manufacturing system.
 
-        [ [ timestamp, order identifier, resource, activity ], ... ]
-
-    State log:
-
-        [ [ timestamp, resource, state ], ... ]
-
-    Return:
+    :param event_log: Event log with headers; timestamp, order_id, resource, and event.
+    :param state_log: State log with headers; timestamp, resource, and state.
+    :param timestamp_key: Attribute to be used for timestamp.
+    :param state_key: Attribute to be used for state.
+    :param resource_key: Attribute to be used for resource.
+    :param activity_key: Attribute to be used for activity.
+    :return: A tuple representation of an atomic DEVS model. 
     
         ( X, Y, S, ta, ext_trans, int_trans, output )
 
@@ -26,145 +37,119 @@ def discover_atomic_devs_of_manufacturing_system(event_log, state_log):
                     mapping int_trans(s) -> s
         output      output function represented as a set of ordered pairs mapping
                     output(s) -> y
+    """
+    log = _join_logs_on_timestamp(event_log, state_log, timestamp_key)
 
-    >>> execute(event_log, state_log)
-    X: {'enter'}
-    Y: {'end'}
-    S: {'idle', 'busy'}
-    ta: {('busy', 5.0), ('idle', inf)}
-    ext_trans: {(('idle', 'enter'), 'busy')}
-    int_trans: {('busy', 'idle')}
-    output: {('busy', 'end')}
-    """
-    
-    """
-    (deprecated)
-    # Log indices
-    EL_timestamp_i = 0
-    EL_order_id_i = 1
-    EL_resource_i = 2
-    EL_activity_i = 3
-    SL_timestamp_i = 0
-    SL_resource_i = 1
-    SL_state_i = 2
-    L_timestamp_i = 0
-    L_event_i = 1
-    L_state_i = 2
-    L_duration_i = 3
-    """
-
-    log = _join_logs_on_timestamp(event_log, state_log)
-
-    """
     # Estimate durations
-    n = len(log)
-    for i in range(n - 1):
-        log[i].append(log[i + 1][L_timestamp_i] - log[i][L_timestamp_i])
-    log[n - 1].append(inf)
+    for i in range(len(log) - 1):
+        log.at[i, duration_key] = log.at[i + 1, timestamp_key] - log.at[i, timestamp_key] 
+    log.at[len(log) - 1, duration_key] = math.inf
 
     # Estimate passive states
-    passive_state = log[len(log)-1][L_state_i][SL_state_i]
+    s = log.at[len(log) - 1, state_log_entry_key]
+    passive_state = s[state_key]
     for i in range(len(log)):
-        if log[i][L_state_i][SL_state_i] == passive_state:
-            log[i][L_duration_i] = inf
+        s = log.at[i, state_log_entry_key]
+        if s[state_key] == passive_state:
+            log.at[i, duration_key] = math.inf
 
     # Identify system resources
     resources = set()
-    for e in log:
-        resources.add(e[L_state_i][SL_resource_i])
+    for i in range(len(state_log)):
+        resources.add(state_log.at[i, resource_key])
 
     # Extract inputs
     inputs = set()
     for i in range(1, len(log)):     
-        event = log[i][L_event_i]
-        current_state = log[i][L_state_i][SL_state_i]
-        prev_state = log[i - 1][L_state_i][SL_state_i]
-        if event[EL_resource_i] not in resources and current_state != prev_state:
-            inputs.add(event[EL_activity_i])
+        event = log.at[i, event_log_entry_key]
+        current_state = log.at[i, state_log_entry_key][state_key]
+        prev_state = log.at[i - 1, state_log_entry_key][state_key]
+        if event[resource_key] not in resources and current_state != prev_state:
+            inputs.add(event[activity_key])
 
     # Extract outputs
     outputs = set()
-    for e in log:     
-        event = e[L_event_i]
-        if event != None and event[EL_resource_i] in resources:
-            outputs.add(event[EL_activity_i])
+    for i in range(len(log)):     
+        event = log.at[i, event_log_entry_key]
+        if event[resource_key] in resources:
+            outputs.add(event[activity_key])
 
     # Extract states
     states = set()
-    for e in log:
-        states.add(e[L_state_i][SL_state_i])
+    for i in range(len(log)):
+        states.add(log.at[i, state_log_entry_key][state_key])
 
     # Extract external transition function
     ext_trans = set()
     for i in range(1, len(log)):
-        event_activity = log[i][L_event_i][EL_activity_i]
-        current_state = log[i][L_state_i][SL_state_i]
-        prev_state = log[i - 1][L_state_i][SL_state_i]
+        event_activity = log.at[i, event_log_entry_key][activity_key]
+        current_state = log.at[i, state_log_entry_key][state_key]
+        prev_state = log.at[i - 1, state_log_entry_key][state_key]
         if event_activity in inputs:
             ext_trans.add( ((prev_state, event_activity), current_state,) )
 
     # Extract internal transition function
     int_trans = set()
     for i in range(1, len(log)):
-        event = log[i][L_event_i]
-        current_state = log[i][L_state_i][SL_state_i]
-        prev_state = log[i - 1][L_state_i][SL_state_i]
+        event = log.at[i, event_log_entry_key]
+        current_state = log.at[i, state_log_entry_key][state_key]
+        prev_state = log.at[i - 1, state_log_entry_key][state_key]
         if current_state != prev_state:
-            if event == None or event[EL_activity_i] not in inputs:
-                int_trans.add( (prev_state, current_state,) )
+            if event[activity_key] not in inputs:
+                int_trans.add((prev_state, current_state,))
 
     # Extract output function
     output_func = set()
-    for i in range(len(log)):
-        event = log[i][L_event_i]
-        prev_state = log[i - 1][L_state_i][SL_state_i]
-        if event != None and event[EL_activity_i] in outputs:
-            output_func.add( (prev_state, event[EL_activity_i],) )
+    for i in range(1, len(log)):
+        event = log.at[i, event_log_entry_key]
+        prev_state = log.at[i - 1, state_log_entry_key][state_key]
+        if event[activity_key] in outputs:
+            output_func.add((prev_state, event[activity_key],))
 
     # Extract time advance function
     ta = set()
-    for e in log:
-        state = e[L_state_i][SL_state_i]
-        duration = e[L_duration_i]
-        ta.add( (state, duration,) )
+    for i in range(len(log)):
+        state = log.at[i, state_log_entry_key][state_key]
+        duration = log.at[i, duration_key]
+        ta.add((state, float(duration),))
         
     return inputs, outputs, states, ta, ext_trans, int_trans, output_func
-    """
 
-def _join_logs_on_timestamp(event_log, state_log, event_log_timestamp_i=0, state_log_timestamp_i=0):
-    # Assumptions:
-    # * logs are not empty
-    # * logs are sorted by timestamp in ascending order
-    # * no concurrency, i.e., events that happen at the same time happen in the given order
-    joined_log = []
+def _join_logs_on_timestamp(event_log, state_log, timestamp_key):
+    joined_log = pd.DataFrame(columns=[timestamp_key, event_log_entry_key, state_log_entry_key, duration_key])
+
+    joined_log_i = 0
     event_log_i = 0
     state_log_i = 0
-    
-    # Add initial state to log
-    joined_log.append( [ state_log[state_log_i][state_log_timestamp_i], None, state_log[state_log_i] ] )
-    state_log_i += 1
 
+    # Add initial state to log
+    joined_log.loc[joined_log_i] = [0, event_log.loc[event_log_i], state_log.loc[state_log_i], None]
+    joined_log_i += 1
+    state_log_i += 1
+    
     while event_log_i < len(event_log) or state_log_i < len(state_log):
         # Case: joined all log entries from event_log
         if event_log_i >= len(event_log):
-            joined_log.append( [ state_log[state_log_i][state_log_timestamp_i], None, state_log[state_log_i] ] )
+            joined_log.loc[joined_log_i] = [state_log[state_log_i][timestamp_key], None, state_log.loc[state_log_i], None]
             state_log_i += 1
         # Case: joined all log entries from state_log
         elif state_log_i >= len(state_log):
-            joined_log.append( [ event_log[event_log_i][event_log_timestamp_i], event_log[event_log_i], None ] )
+            joined_log.loc[joined_log_i] = [event_log[event_log_i][timestamp_key], event_log.loc[event_log_i], None, None]
             event_log_i += 1
         # Case: timestamps match
-        elif event_log[event_log_i][event_log_timestamp_i] == state_log[state_log_i][state_log_timestamp_i]:
-            joined_log.append( [ event_log[event_log_i][event_log_timestamp_i], event_log[event_log_i], state_log[state_log_i] ] )
+        elif event_log.loc[event_log_i][timestamp_key] == state_log.loc[state_log_i][timestamp_key]:
+            joined_log.loc[joined_log_i] = [event_log.loc[event_log_i][timestamp_key], event_log.loc[event_log_i], 
+                                            state_log.loc[state_log_i], None]
             event_log_i += 1
             state_log_i += 1
         # Case: event_log timestamp is less than state_log timestamp
-        elif event_log[event_log_i][event_log_timestamp_i] < state_log[state_log_i][state_log_timestamp_i]:
-            joined_log.append( [ event_log[event_log_i][event_log_timestamp_i], event_log[event_log_i], None ] )
+        elif event_log.loc[event_log_i][timestamp_key] < state_log.loc[state_log_i][timestamp_key]:
+            joined_log.loc[joined_log_i] = [event_log.loc[event_log_i][timestamp_key], event_log.loc[event_log_i], None, None]
             event_log_i += 1
         # Case: event_log timestamp is greater than state_log timestamp
         else:
-            joined_log.append( [ state_log[state_log_i][state_log_timestamp_i], None, state_log[state_log_i] ] )
+            joined_log.loc[joined_log_i] = [state_log.loc[state_log_i][timestamp_key], None, state_log.loc[state_log_i], None]
             state_log_i += 1
+        joined_log_i += 1
 
     return joined_log
