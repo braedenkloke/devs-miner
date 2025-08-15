@@ -1,24 +1,15 @@
 import unittest
 import csv
 import math
+import pandas as pd
 
 import devsminer.discover as dm
 
 class DiscoverTest(unittest.TestCase):
 
     def test_discover_atomic_devs_of_manufacturing_system(self):
-        event_log = []
-        state_log = []
-    
-        with open('tests/input_data/manufacturing_sys_event_log.csv', newline='') as f:
-            reader = csv.reader(f, delimiter=',')
-            for row in reader:
-                event_log.append(row)
-
-        with open('tests/input_data/manufacturing_sys_state_log.csv', newline='') as f:
-            reader = csv.reader(f, delimiter=',')
-            for row in reader:
-                state_log.append(row)
+        event_log = pd.read_csv('tests/input_data/manufacturing_sys_event_log.csv', sep=',', converters={"order_id":str})
+        state_log = pd.read_csv('tests/input_data/manufacturing_sys_state_log.csv', sep=',')
 
         X, Y, S, ta, ext_trans, int_trans, output = dm.discover_atomic_devs_of_manufacturing_system(event_log, state_log)
 
@@ -33,7 +24,7 @@ class DiscoverTest(unittest.TestCase):
         counter = 0
         for m in ta:
             if m[0] == "idle":
-                self.assertEqual(inf, m[1])
+                self.assertEqual(math.inf, m[1])
                 counter += 1
             elif m[0] == "busy":
                 self.assertEqual(5, m[1])
