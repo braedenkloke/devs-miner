@@ -2,8 +2,14 @@
 Process mining algorithms for [DEVS](https://en.wikipedia.org/wiki/DEVS) models.
 
 # Usage
+
+*Tested with Python 3.11*
+
 With `$PYTHON_PATH` set to `$PWD`, run
 ```
+python3 -m venv .
+source bin/activate
+pip install -r requirements.txt
 python3 examples/discover_atomic_devs_model_of_manufacturing_sys.py` 
 ```
 
